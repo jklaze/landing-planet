@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    environment:
+      EDIT_PASSWORD: ${EDIT_PASSWORD:-}
+    # Persist content + uploads on the host so edits survive rebuilds.
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

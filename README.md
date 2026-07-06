@@ -17,6 +17,17 @@ EDIT_PASSWORD=yourpassword python3 server.py
 Without `EDIT_PASSWORD` the page still works, but edit mode is disabled.
 `PORT` (default `8000`) is also configurable via env.
 
+### With Docker Compose
+
+```sh
+cp .env.example .env   # set EDIT_PASSWORD (and WEB_PORT if you like)
+docker compose up -d --build
+# → http://localhost:8000
+```
+
+Content and uploads live in `./data`, bind-mounted into the container, so
+edits made through the page survive rebuilds and restarts.
+
 ## Editing
 
 All content lives in **`data/site.json`** — owner info, links, and one entry
