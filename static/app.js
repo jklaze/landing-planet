@@ -3,6 +3,7 @@
 // persists changes through server.py.
 import { h, render, Component, createRef } from 'https://esm.sh/preact@10.24.3';
 import htm from 'https://esm.sh/htm@3.1.1';
+import { traitsFor, textureFor } from './planet-detail.js';
 const html = htm.bind(h);
 
 const FH = "'Fredoka',sans-serif", FB = "'Nunito',sans-serif";
@@ -241,6 +242,32 @@ class Solar extends Component {
       const pos = this.posOf(p, drift);
       const glowHex = lift ? 'cc' : '55';
       const ringBase = p.ring ? { position: 'absolute', left: '50%', top: '50%', width: (s * 2.2) + 'px', height: (s * 0.74) + 'px', borderRadius: '50%', border: `${Math.max(4, s * 0.085)}px solid ${p.atmo}99`, boxShadow: `0 0 ${s * 0.3}px ${p.atmo}44` } : null;
+      // Close-up detail layers (seeded surface spin, clouds, moons) — mounted
+      // only while this planet is the open view, faded by selection state.
+      let detail = null;
+      if (view === i) {
+        const tr = traitsFor(p.key), tex = textureFor(p, tr);
+        const fade = { opacity: isSel ? 1 : 0, transition: 'opacity .55s' };
+        detail = html`
+        ${tex.surface && html`
+        <div style=${{ position: 'absolute', inset: 0, zIndex: 2, borderRadius: '50%', overflow: 'hidden', ...fade, animation: 'arrive .6s ease-out backwards' }}>
+          <div class="pd-anim" style=${{ position: 'absolute', top: 0, left: 0, width: '200%', height: '100%', backgroundImage: `url(${tex.surface})`, backgroundSize: '50% 100%', backgroundRepeat: 'repeat-x', animation: `slide ${tr.spinDur.toFixed(1)}s linear infinite ${tr.spinDir < 0 ? 'reverse' : 'normal'}`, willChange: 'transform' }}/>
+          ${tex.clouds && html`<div class="pd-anim" style=${{ position: 'absolute', top: 0, left: 0, width: '200%', height: '100%', backgroundImage: `url(${tex.clouds})`, backgroundSize: '50% 100%', backgroundRepeat: 'repeat-x', opacity: .55, animation: `slide ${(tr.spinDur * 1.7).toFixed(1)}s linear infinite ${tr.spinDir < 0 ? 'normal' : 'reverse'}`, willChange: 'transform' }}/>`}
+          <div style=${{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle at 34% 30%, rgba(255,255,255,.22), transparent 46%)', boxShadow: `inset ${-s * 0.14}px ${-s * 0.16}px ${s * 0.3}px rgba(0,0,0,.55), inset ${s * 0.08}px ${s * 0.06}px ${s * 0.16}px rgba(255,255,255,.22)` }}/>
+        </div>`}
+        ${tr.moons.map((m, mi) => {
+          const R = s * m.orbit, ry = R * 0.34, msz = Math.max(5, s * m.rel);
+          const dx = -m.phase * m.dur, dy = dx - m.dur / 4;
+          return html`
+          <div key=${'m' + mi} class="pd-anim" style=${{ position: 'absolute', left: '50%', top: '50%', width: 0, height: 0, zIndex: 4, ...fade, animation: `arrive .6s ease-out backwards, mz ${m.dur.toFixed(2)}s linear infinite ${dy.toFixed(2)}s` }}>
+            <div class="pd-anim" style=${{ '--r': R.toFixed(1) + 'px', transform: `translateX(${R.toFixed(1)}px)`, animation: `mx ${m.dur.toFixed(2)}s ease-in-out infinite ${dx.toFixed(2)}s` }}>
+              <div class="pd-anim" style=${{ '--ry': ry.toFixed(1) + 'px', animation: `my ${m.dur.toFixed(2)}s ease-in-out infinite ${dy.toFixed(2)}s` }}>
+                <div style=${{ width: msz + 'px', height: msz + 'px', marginLeft: -msz / 2 + 'px', marginTop: -msz / 2 + 'px', borderRadius: '50%', background: `radial-gradient(circle at 34% 30%, ${p.light}, #9aa 55%, #445 100%)`, boxShadow: `inset ${-msz * 0.12}px ${-msz * 0.14}px ${msz * 0.3}px rgba(0,0,0,.5), 0 0 ${msz * 0.5}px ${p.atmo}33` }}/>
+              </div>
+            </div>
+          </div>`;
+        })}`;
+      }
       return html`
       <div key=${p.key}
         onMouseEnter=${() => { if (!active) this.setState({ hov: i }); }}
@@ -252,6 +279,7 @@ class Solar extends Component {
           <div style=${{ position: 'relative', width: '100%', height: '100%', transform: isHov ? 'scale(1.17)' : 'scale(1)', transition: 'transform .38s cubic-bezier(.34,1.56,.64,1)' }}>
             ${p.ring && html`<div style=${{ ...ringBase, zIndex: 1, transform: 'translate(-50%,-50%) rotate(-16deg)' }}/>`}
             <div style=${{ position: 'absolute', inset: 0, zIndex: 2, borderRadius: '50%', background: `radial-gradient(circle at 34% 30%, ${p.light}, ${p.mid} 54%, ${p.dark} 100%)`, boxShadow: `inset ${-s * 0.14}px ${-s * 0.16}px ${s * 0.3}px rgba(0,0,0,.5), inset ${s * 0.08}px ${s * 0.06}px ${s * 0.16}px rgba(255,255,255,.28), 0 0 ${s * (lift ? 0.95 : 0.5)}px ${p.atmo}${glowHex}, 0 ${s * 0.16}px ${s * 0.4}px rgba(0,0,0,.4)`, transition: 'box-shadow .38s' }}/>
+            ${detail}
             ${p.ring && html`<div style=${{ ...ringBase, zIndex: 3, transform: 'translate(-50%,-50%) rotate(-16deg)', clipPath: 'polygon(-12% 47%, 112% 47%, 112% 130%, -12% 130%)' }}/>`}
             <div style=${{ position: 'absolute', left: '50%', top: 'calc(100% + 12px)', transform: isHov ? 'translateX(-50%)' : 'translateX(-50%) translateY(5px)', whiteSpace: 'nowrap', fontFamily: FH, fontWeight: 600, fontSize: '14px', color: '#fff', background: 'rgba(10,12,30,.72)', backdropFilter: 'blur(6px)', padding: '5px 12px', borderRadius: '999px', border: '1px solid rgba(255,255,255,.16)', opacity: (isHov && !active) ? 1 : 0, transition: 'opacity .25s, transform .25s', pointerEvents: 'none', boxShadow: '0 6px 20px rgba(0,0,0,.35)', zIndex: 5 }}>${p.name}</div>
           </div>
