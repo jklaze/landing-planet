@@ -50,6 +50,9 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/api/session":
             return self.reply(200 if self.authed() else 401, {"ok": self.authed()})
+        clean = self.path.split("?", 1)[0]
+        if clean == "/server.py" or any(seg.startswith(".") for seg in clean.split("/")):
+            return self.reply(404, {"error": "not found"})
         super().do_GET()
 
     def do_POST(self):
