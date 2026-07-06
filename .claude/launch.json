@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "solar",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "EDIT_PASSWORD=letmein PORT=8471 exec python3 server.py"],
+      "port": 8471
+    }
+  ]
+}

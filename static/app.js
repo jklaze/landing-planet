@@ -27,7 +27,7 @@ class Solar extends Component {
     const vw = window.innerWidth, vh = window.innerHeight;
     this.state = { site: null, sel: null, view: null, open: false, ci: 0, hov: null, hovSun: false,
       vw, vh, baseScale: this.calcScale(vw, vh), drift: 0, logoClicks: 0,
-      pwdOpen: false, pwd: '', pwdErr: false, pwdMsg: '', editable: false, saveState: 'saved' };
+      pwdOpen: false, pwd: '', pwdErr: false, pwdMsg: '', editable: false, saveState: 'saved', confirmOpen: false };
   }
 
   calcScale(vw, vh) { return Math.max(0.3, Math.min(1.05, Math.min(vw / 1480, vh / 980))); }
@@ -38,11 +38,17 @@ class Solar extends Component {
   }
 
   async componentDidMount() {
-    fetch('data/site.json').then(r => r.json()).then(site => this.setState({ site }));
+    fetch('data/site.json', { cache: 'no-store' }).then(r => r.json()).then(site => {
+      this.setState({ site });
+      if (this.state.editable && !this._snap) this._snap = structuredClone(site);
+    });
     if (this.token) fetch('/api/session', { headers: { Authorization: 'Bearer ' + this.token } })
-      .then(r => { if (r.ok) this.setState({ editable: true }); else { this.token = ''; sessionStorage.removeItem('solar-token'); } });
+      .then(r => {
+        if (r.ok) { this.setState({ editable: true }); if (this.state.site && !this._snap) this._snap = structuredClone(this.state.site); }
+        else { this.token = ''; sessionStorage.removeItem('solar-token'); }
+      });
     this._onResize = () => { const vw = window.innerWidth, vh = window.innerHeight; this.setState({ vw, vh, baseScale: this.calcScale(vw, vh) }); };
-    this._onKey = (e) => { if (e.key === 'Escape') { if (this.state.pwdOpen) this.closePwd(); else this.back(); } };
+    this._onKey = (e) => { if (e.key === 'Escape') { if (this.state.confirmOpen) this.setState({ confirmOpen: false }); else if (this.state.pwdOpen) this.closePwd(); else this.back(); } };
     this._onMove = (e) => {
       if (this.state.sel != null) return;
       this._nx = e.clientX / window.innerWidth - 0.5;
@@ -62,7 +68,7 @@ class Solar extends Component {
     const tick = (ts) => {
       if (this._last == null) this._last = ts;
       const dt = Math.min(0.05, (ts - this._last) / 1000); this._last = ts;
-      if (this.state.sel == null) { this._drift += dt * 0.028; this.setState({ drift: this._drift }); }
+      if (this.state.sel == null && !this._dragging) { this._drift += dt * 0.028; this.setState({ drift: this._drift }); }
       this._loop = requestAnimationFrame(tick);
     };
     this._loop = requestAnimationFrame(tick);
@@ -91,10 +97,7 @@ class Solar extends Component {
   carousel(dir, n) { if (n) this.setState(s => ({ ci: (s.ci + dir + n) % n })); }
 
   // ── editing ──────────────────────────────────────────────────────────────
-  up(fn, cb) {
-    const site = structuredClone(this.state.site);
-    fn(site);
-    this.setState({ site }, cb);
+  persist() {
     clearTimeout(this._sv);
     this.setState({ saveState: 'saving' });
     this._sv = setTimeout(async () => {
@@ -105,6 +108,40 @@ class Solar extends Component {
         this.setState({ saveState: r.ok ? 'saved' : 'error' });
       } catch { this.setState({ saveState: 'error' }); }
     }, 700);
+  }
+  up(fn, cb) {
+    const site = structuredClone(this.state.site);
+    fn(site);
+    this.setState({ site }, cb);
+    this.persist();
+  }
+  dragPlanet(e, i) {
+    if (!this.state.editable || this.state.sel != null) return;
+    e.preventDefault(); e.stopPropagation();
+    const sx = e.clientX, sy = e.clientY;
+    let moved = false;
+    const move = (ev) => {
+      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 5) return;
+      moved = true; this._dragging = true;
+      const { vw, vh, baseScale, drift } = this.state;
+      const dx = (ev.clientX - vw / 2) / baseScale, dy = (ev.clientY - vh / 2) / baseScale;
+      const a = Math.round(Math.max(140, Math.min(720, Math.hypot(dx, dy * 2))));
+      const ang = Math.round(((Math.atan2(dy * 2, dx) - drift * Math.pow(300 / a, 0.6)) * 180 / Math.PI % 360 + 360) % 360);
+      const site = structuredClone(this.state.site);
+      site.planets[i].a = a; site.planets[i].ang = ang;
+      this.setState({ site });
+    };
+    const end = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      this._dragging = false;
+      if (moved) {
+        this._noClick = true; setTimeout(() => { this._noClick = false; }, 0);
+        this.persist();
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end);
   }
   ed(set) { return (e) => this.up(s => set(s, e.target.innerText.replace(/\s+/g, ' ').trim())); }
   editLink(cur, set) {
@@ -169,15 +206,33 @@ class Solar extends Component {
       if (r.ok) {
         this.token = (await r.json()).token;
         sessionStorage.setItem('solar-token', this.token);
+        if (this.state.site) this._snap = structuredClone(this.state.site);
         this.setState({ editable: true, pwdOpen: false, pwd: '', pwdErr: false, pwdMsg: '' });
       } else this.setState({ pwdErr: true, pwdMsg: (await r.json()).error || 'Incorrect password. Try again.' });
     } catch { this.setState({ pwdErr: true, pwdMsg: 'Server unreachable.' }); }
   }
-  exitEdit() { this.setState({ editable: false }); }
+  async finishEdit(save) {
+    this.setState({ confirmOpen: false });
+    clearTimeout(this._sv);
+    const body = save ? this.state.site : this._snap;
+    if (body) {
+      try {
+        await fetch('/api/site', { method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + this.token },
+          body: JSON.stringify(body) });
+      } catch { /* fall through — the refetch below shows whatever the server has */ }
+    }
+    let site = body || this.state.site;
+    try { site = await (await fetch('data/site.json?v=' + Date.now(), { cache: 'no-store' })).json(); } catch {}
+    this._snap = null;
+    this.token = '';
+    sessionStorage.removeItem('solar-token');
+    this.setState({ editable: false, site, saveState: 'saved', sel: null, open: false, view: null });
+  }
 
   // ── render ───────────────────────────────────────────────────────────────
   render() {
-    const { site, sel, view, open, ci, hov, hovSun, vw, drift, pwdOpen, pwd, pwdErr, pwdMsg, editable, saveState } = this.state;
+    const { site, sel, view, open, ci, hov, hovSun, vw, drift, pwdOpen, pwd, pwdErr, pwdMsg, editable, saveState, confirmOpen } = this.state;
     if (!site) return html`<div/>`;
     const active = sel != null, narrow = vw < 820, o = site.owner;
 
@@ -190,8 +245,9 @@ class Solar extends Component {
       <div key=${p.key}
         onMouseEnter=${() => { if (!active) this.setState({ hov: i }); }}
         onMouseLeave=${() => this.setState({ hov: null })}
-        onClick=${() => this.select(i)}
-        style=${{ position: 'absolute', left: pos.x + 'px', top: pos.y + 'px', width: s + 'px', height: s + 'px', transform: 'translate(-50%,-50%)', zIndex: Math.round(pos.y) + (isHov ? 300 : 0), cursor: active ? 'default' : 'pointer', opacity: (active && !isSel) ? 0.14 : 1, filter: (active && !isSel) ? 'blur(1.5px)' : 'none', transition: 'opacity .5s, filter .5s', pointerEvents: active ? 'none' : 'auto' }}>
+        onClick=${() => { if (!this._noClick) this.select(i); }}
+        onPointerDown=${(e) => this.dragPlanet(e, i)}
+        style=${{ position: 'absolute', left: pos.x + 'px', top: pos.y + 'px', width: s + 'px', height: s + 'px', transform: 'translate(-50%,-50%)', zIndex: Math.round(pos.y) + (isHov ? 300 : 0), cursor: active ? 'default' : (editable ? 'grab' : 'pointer'), touchAction: editable ? 'none' : 'auto', opacity: (active && !isSel) ? 0.14 : 1, filter: (active && !isSel) ? 'blur(1.5px)' : 'none', transition: 'opacity .5s, filter .5s', pointerEvents: active ? 'none' : 'auto' }}>
         <div style=${{ position: 'relative', width: '100%', height: '100%', animation: `bob ${(4.2 + (i % 4) * 0.9).toFixed(2)}s ease-in-out ${(i * 0.55).toFixed(2)}s infinite`, willChange: 'transform' }}>
           <div style=${{ position: 'relative', width: '100%', height: '100%', transform: isHov ? 'scale(1.17)' : 'scale(1)', transition: 'transform .38s cubic-bezier(.34,1.56,.64,1)' }}>
             ${p.ring && html`<div style=${{ ...ringBase, zIndex: 1, transform: 'translate(-50%,-50%) rotate(-16deg)' }}/>`}
@@ -384,9 +440,22 @@ class Solar extends Component {
       ${editable && html`
       <div style=${{ position: 'fixed', bottom: '18px', left: '50%', transform: 'translateX(-50%)', zIndex: 190, display: 'flex', alignItems: 'center', gap: '9px', background: 'rgba(20,22,46,.9)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,210,140,.3)', borderRadius: '999px', padding: '8px 16px 8px 13px', boxShadow: '0 10px 30px rgba(0,0,0,.4)', fontFamily: FB, fontSize: '13px', color: 'rgba(255,240,220,.92)' }}>
         <span style=${{ width: '8px', height: '8px', borderRadius: '50%', background: saveState === 'error' ? '#ff9a8a' : '#7bd88f', boxShadow: `0 0 10px ${saveState === 'error' ? '#ff9a8a' : '#7bd88f'}` }}/>
-        ${saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Save failed — retrying on next edit' : 'Edit mode on — click any text to edit'}
+        ${saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Save failed — retrying on next edit' : 'Edit mode on — click text to edit, drag planets to move orbits'}
         <button onClick=${() => this.addPlanet()} style=${{ background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.15)', color: '#fff', borderRadius: '999px', padding: '3px 10px', fontFamily: FH, fontSize: '12px', cursor: 'pointer' }}>+ planet</button>
-        <button onClick=${() => this.exitEdit()} style=${{ background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.15)', color: '#fff', borderRadius: '999px', padding: '3px 10px', fontFamily: FH, fontSize: '12px', cursor: 'pointer' }}>Done</button>
+        <button onClick=${() => this.setState({ confirmOpen: true })} style=${{ background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.15)', color: '#fff', borderRadius: '999px', padding: '3px 10px', fontFamily: FH, fontSize: '12px', cursor: 'pointer' }}>Done</button>
+      </div>`}
+
+      ${confirmOpen && html`
+      <div onClick=${() => this.setState({ confirmOpen: false })} style=${{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(4,5,16,.6)', backdropFilter: 'blur(6px)', animation: 'arrive .25s ease-out both' }}>
+        <div onClick=${(e) => e.stopPropagation()} style=${{ width: 'min(360px,90vw)', background: 'linear-gradient(160deg,rgba(28,26,54,.98),rgba(14,14,32,.99))', border: '1px solid rgba(255,210,140,.25)', borderRadius: '18px', padding: '26px 24px', boxShadow: '0 30px 80px rgba(0,0,0,.6)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style=${{ fontFamily: FH, fontWeight: 600, fontSize: '17px', color: '#fff' }}>Finish editing?</div>
+          <div style=${{ fontFamily: FB, fontSize: '13.5px', color: 'rgba(238,240,255,.7)', lineHeight: 1.5 }}>Save your changes, or discard everything since you unlocked edit mode.</div>
+          <div style=${{ display: 'flex', flexDirection: 'column', gap: '9px', marginTop: '2px' }}>
+            <button onClick=${() => this.finishEdit(true)} style=${{ padding: '11px', borderRadius: '11px', background: 'linear-gradient(135deg,#ffd98a,#ff8a5c)', border: 'none', color: '#241016', fontFamily: FH, fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>Save & exit</button>
+            <button onClick=${() => this.finishEdit(false)} style=${{ padding: '11px', borderRadius: '11px', background: 'rgba(255,120,110,.12)', border: '1px solid rgba(255,120,110,.35)', color: '#ff9a8a', fontFamily: FH, fontWeight: 500, fontSize: '14px', cursor: 'pointer' }}>Discard changes & exit</button>
+            <button onClick=${() => this.setState({ confirmOpen: false })} style=${{ padding: '11px', borderRadius: '11px', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', color: '#fff', fontFamily: FH, fontWeight: 500, fontSize: '14px', cursor: 'pointer' }}>Keep editing</button>
+          </div>
+        </div>
       </div>`}
     </div>`;
   }

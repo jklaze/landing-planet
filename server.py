@@ -47,6 +47,11 @@ class Handler(SimpleHTTPRequestHandler):
         tok = (self.headers.get("Authorization") or "").removeprefix("Bearer ").strip()
         return tokens.get(tok, 0) > time.time()
 
+    def end_headers(self):
+        if self.path.split("?", 1)[0] == "/data/site.json":
+            self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
     def do_GET(self):
         if self.path == "/api/session":
             return self.reply(200 if self.authed() else 401, {"ok": self.authed()})
