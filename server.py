@@ -15,7 +15,14 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(ROOT, "data", "site.json")
+SITE_DEFAULT = os.path.join(ROOT, "data", "site.default.json")
 UPLOADS = os.path.join(ROOT, "data", "uploads")
+
+# data/site.json is gitignored (it's rewritten on every content edit); seed it
+# from the tracked default on first run so a fresh clone has content to serve.
+if not os.path.exists(SITE) and os.path.exists(SITE_DEFAULT):
+    import shutil
+    shutil.copyfile(SITE_DEFAULT, SITE)
 PASSWORD = os.environ.get("EDIT_PASSWORD", "")
 PORT = int(os.environ.get("PORT", "8000"))
 TOKEN_TTL = 12 * 3600

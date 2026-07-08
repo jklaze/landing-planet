@@ -1,0 +1,172 @@
+{
+  "owner": {
+    "ownerName": "yourname",
+    "fullName": "Your Name",
+    "profession": "Your Profession",
+    "bio": "A short bio goes here. Say who you are and what you build.",
+    "email": "you@example.com",
+    "location": "Your City, Country",
+    "navHint": "tap a planet to explore",
+    "photo": ""
+  },
+  "links": {
+    "github": "#",
+    "linkedin": "#",
+    "resume": "#",
+    "email": "#"
+  },
+  "planets": [
+    {
+      "key": "planet-1",
+      "name": "Project One",
+      "tagline": "a short tagline",
+      "desc": "A short description of this project goes here.",
+      "link": "#",
+      "size": 54,
+      "a": 200,
+      "ang": 206,
+      "ring": false,
+      "light": "#cfe8b0",
+      "mid": "#7cbf6a",
+      "dark": "#356b3d",
+      "atmo": "#a8e063",
+      "tags": [
+        "Tag"
+      ],
+      "images": []
+    },
+    {
+      "key": "planet-2",
+      "name": "Project Two",
+      "tagline": "a short tagline",
+      "desc": "A short description of this project goes here.",
+      "link": "#",
+      "size": 44,
+      "a": 275,
+      "ang": 24,
+      "ring": false,
+      "light": "#bfe3ff",
+      "mid": "#5aa8f0",
+      "dark": "#274f96",
+      "atmo": "#7cc0ff",
+      "tags": [
+        "Tag"
+      ],
+      "images": []
+    },
+    {
+      "key": "planet-3",
+      "name": "Project Three",
+      "tagline": "a short tagline",
+      "desc": "A short description of this project goes here.",
+      "link": "#",
+      "size": 68,
+      "a": 345,
+      "ang": 150,
+      "ring": false,
+      "light": "#e6d8ff",
+      "mid": "#a98bef",
+      "dark": "#5a41ab",
+      "atmo": "#c9b3ff",
+      "tags": [
+        "Tag"
+      ],
+      "images": []
+    },
+    {
+      "key": "planet-4",
+      "name": "Project Four",
+      "tagline": "a short tagline",
+      "desc": "A short description of this project goes here.",
+      "link": "#",
+      "size": 86,
+      "a": 425,
+      "ang": 312,
+      "ring": true,
+      "light": "#ffcfa3",
+      "mid": "#ef8f5a",
+      "dark": "#a8492a",
+      "atmo": "#ffb27a",
+      "tags": [
+        "Tag"
+      ],
+      "images": []
+    },
+    {
+      "key": "planet-5",
+      "name": "Project Five",
+      "tagline": "a short tagline",
+      "desc": "A short description of this project goes here.",
+      "link": "#",
+      "size": 56,
+      "a": 495,
+      "ang": 92,
+      "ring": false,
+      "light": "#ffd0e0",
+      "mid": "#f085ab",
+      "dark": "#a83f68",
+      "atmo": "#ff9dc2",
+      "tags": [
+        "Tag"
+      ],
+      "images": []
+    },
+    {
+      "key": "planet-6",
+      "name": "Project Six",
+      "tagline": "a short tagline",
+      "desc": "A short description of this project goes here.",
+      "link": "#",
+      "size": 62,
+      "a": 560,
+      "ang": 236,
+      "ring": false,
+      "light": "#bdf1ff",
+      "mid": "#4fb3d9",
+      "dark": "#234a86",
+      "atmo": "#6fd0ee",
+      "tags": [
+        "Tag"
+      ],
+      "images": []
+    },
+    {
+      "key": "planet-7",
+      "name": "Project Seven",
+      "tagline": "a short tagline",
+      "desc": "A short description of this project goes here.",
+      "link": "#",
+      "size": 48,
+      "a": 625,
+      "ang": 352,
+      "ring": false,
+      "light": "#ffe6a3",
+      "mid": "#eab84f",
+      "dark": "#9c7018",
+      "atmo": "#ffd76a",
+      "tags": [
+        "Tag"
+      ],
+      "images": []
+    },
+    {
+      "key": "planet-8",
+      "name": "Project Eight",
+      "tagline": "a short tagline",
+      "desc": "A short description of this project goes here.",
+      "link": "#",
+      "size": 74,
+      "a": 688,
+      "ang": 128,
+      "ring": true,
+      "light": "#b8f0e4",
+      "mid": "#45b8a4",
+      "dark": "#1c7364",
+      "atmo": "#6fd8c6",
+      "tags": [
+        "Tag"
+      ],
+      "images": []
+    }
+  ]
+}
