@@ -5,6 +5,7 @@ services:
       - "${WEB_PORT:-8000}:8000"
     environment:
       EDIT_PASSWORD: ${EDIT_PASSWORD:-}
+      APP_TITLE: ${APP_TITLE:-Landing Planet}
     # Persist content + uploads on the host so edits survive rebuilds.
     volumes:
       - ./data:/app/data

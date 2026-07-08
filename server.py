@@ -10,7 +10,7 @@ Serves the static site plus three JSON endpoints:
 Run:  EDIT_PASSWORD=yourpassword python3 server.py
 Editing stays disabled (503 on login) when EDIT_PASSWORD is unset.
 """
-import base64, hmac, json, os, re, secrets, time
+import base64, hmac, html, json, os, re, secrets, time
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -25,6 +25,7 @@ if not os.path.exists(SITE) and os.path.exists(SITE_DEFAULT):
     shutil.copyfile(SITE_DEFAULT, SITE)
 PASSWORD = os.environ.get("EDIT_PASSWORD", "")
 PORT = int(os.environ.get("PORT", "8000"))
+APP_TITLE = os.environ.get("APP_TITLE", "Landing Planet")
 TOKEN_TTL = 12 * 3600
 MAX_BODY = 4 * 1024 * 1024
 
@@ -59,10 +60,24 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
+    def serve_index(self):
+        with open(os.path.join(ROOT, "index.html"), encoding="utf-8") as f:
+            page = f.read()
+        title = f"<title>{html.escape(APP_TITLE)}</title>"
+        page = re.sub(r"<title>[^<]*</title>", title, page, count=1)
+        body = page.encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
         if self.path == "/api/session":
             return self.reply(200 if self.authed() else 401, {"ok": self.authed()})
         clean = self.path.split("?", 1)[0]
+        if clean in ("/", "/index.html"):
+            return self.serve_index()
         if clean == "/server.py" or any(seg.startswith(".") for seg in clean.split("/")):
             return self.reply(404, {"error": "not found"})
         super().do_GET()
