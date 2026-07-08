@@ -1,5 +1,9 @@
 # landing-planet ☀️
 
+<img width="500" height="287" alt="image" src="https://github.com/user-attachments/assets/3e8b9208-e27e-464e-bb3c-dda1ecbd1a16" />
+<img width="500" height="287" alt="image" src="https://github.com/user-attachments/assets/d79c904f-42db-4760-8440-27e549f83ead" />
+
+
 A tiny solar-system portfolio landing page. The sun is you, the planets are your
 projects — hover to see them wobble, click to zoom in. Includes a hidden edit
 mode that saves changes server-side.
