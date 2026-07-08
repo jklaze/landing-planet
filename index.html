@@ -1,36 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>jklaze — solar system</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-  html,body{margin:0;padding:0;background:#08081a;overflow:hidden;font-family:'Nunito',sans-serif;}
-  *{box-sizing:border-box;}
-  ::selection{background:rgba(255,180,120,.4);}
-  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-  @keyframes tw{0%,100%{opacity:.9}50%{opacity:.5}}
-  @keyframes tw2{0%,100%{opacity:.55}50%{opacity:.25}}
-  @keyframes sunpulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.05);opacity:1}}
-  @keyframes coronaspin{to{transform:rotate(360deg)}}
-  @keyframes arrive{from{opacity:0}to{opacity:1}}
-  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
-  @keyframes slide{to{transform:translateX(-50%)}}
-  @keyframes mx{0%,100%{transform:translateX(var(--r))}50%{transform:translateX(calc(var(--r) * -1))}}
-  @keyframes my{0%,100%{transform:translateY(var(--ry))}50%{transform:translateY(calc(var(--ry) * -1))}}
-  @keyframes mz{0%,24.9%{z-index:4}25%,74.9%{z-index:1}75%,100%{z-index:4}}
-  @media (prefers-reduced-motion:reduce){.pd-anim{animation:none!important}}
-  [contenteditable="true"]{outline:1px dashed rgba(255,210,140,.6);outline-offset:4px;border-radius:5px;cursor:text;}
-  [contenteditable="true"]:focus{outline:1px solid rgba(255,210,140,.9);}
-  .xbtn:hover{background:rgba(255,255,255,.18)!important;}
-  .lcard:hover{background:rgba(255,210,140,.16)!important;border-color:rgba(255,210,140,.45)!important;}
-</style>
-</head>
-<body>
-<div id="app"></div>
-<script type="module" src="static/app.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>jklaze — solar system</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/app.css">
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="static/app.js"></script>
+  </body>
 </html>
