@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 WORKDIR /app
-COPY server.py index.html ./
+COPY server.py index.html site.default.json ./
 COPY static ./static
 COPY data ./data
 EXPOSE 8000

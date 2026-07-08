@@ -15,7 +15,7 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(ROOT, "data", "site.json")
-SITE_DEFAULT = os.path.join(ROOT, "data", "site.default.json")
+SITE_DEFAULT = os.path.join(ROOT, "site.default.json")
 UPLOADS = os.path.join(ROOT, "data", "uploads")
 
 # data/site.json is gitignored (it's rewritten on every content edit); seed it
